@@ -739,10 +739,18 @@ static struct drgn_error *depmod_index_init(struct depmod_index *depmod,
 {
 	struct drgn_error *err;
 
+
 	snprintf(depmod->path, sizeof(depmod->path),
 		 "/lib/modules/%s/modules.dep.bin", osrelease);
 
 	int fd = open(depmod->path, O_RDONLY);
+	if (fd == -1 && errno == ENOENT) {
+		snprintf(depmod->path, sizeof(depmod->path),
+			 "/run/booted-system/kernel-modules/lib/modules/%s/modules.dep.bin", osrelease);
+
+		fd = open(depmod->path, O_RDONLY);
+	}
+
 	if (fd == -1)
 		return drgn_error_create_os("open", errno, depmod->path);
 
@@ -1157,6 +1165,7 @@ report_default_kernel_module(struct drgn_debug_info_load_state *load,
 		"/usr/lib/debug/lib/modules/%s/%.*s",
 		"/usr/lib/debug/lib/modules/%s/%.*s.debug",
 		"/lib/modules/%s/%.*s%.*s",
+		"/run/booted-system/kernel-modules/lib/modules/%s/%.*s%.*s",
 		NULL,
 	};
 	struct drgn_error *err;
